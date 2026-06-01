@@ -1,0 +1,48 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${ENERGYPAL_AUTH_SERVICE_URI:http://localhost:8081}
+          predicates: [ Path=/api/auth/** ]
+        - id: customer-service
+          uri: ${ENERGYPAL_CUSTOMER_SERVICE_URI:http://localhost:8082}
+          predicates: [ Path=/api/customers/** ]
+        - id: supplier-service
+          uri: ${ENERGYPAL_SUPPLIER_SERVICE_URI:http://localhost:8083}
+          predicates: [ Path=/api/suppliers/** ]
+        - id: tariff-service
+          uri: ${ENERGYPAL_TARIFF_SERVICE_URI:http://localhost:8084}
+          predicates: [ Path=/api/tariffs/** ]
+        - id: usage-service
+          uri: ${ENERGYPAL_USAGE_SERVICE_URI:http://localhost:8085}
+          predicates: [ Path=/api/usage/** ]
+        - id: billing-service
+          uri: ${ENERGYPAL_BILLING_SERVICE_URI:http://localhost:8086}
+          predicates: [ Path=/api/bills/** ]
+        - id: payment-service
+          uri: ${ENERGYPAL_PAYMENT_SERVICE_URI:http://localhost:8087}
+          predicates: [ Path=/api/payments/** ]
+        - id: notification-service
+          uri: ${ENERGYPAL_NOTIFICATION_SERVICE_URI:http://localhost:8088}
+          predicates: [ Path=/api/notifications/** ]
+        - id: search-indexer-service
+          uri: ${ENERGYPAL_SEARCH_INDEXER_SERVICE_URI:http://localhost:8089}
+          predicates: [ Path=/api/search/** ]
+        - id: audit-service
+          uri: ${ENERGYPAL_AUDIT_SERVICE_URI:http://localhost:8090}
+          predicates: [ Path=/api/audit/** ]
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

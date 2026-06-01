@@ -1,0 +1,55 @@
+[
+  {
+    "supplier_name": "energyOne",
+    "plan_name": "planOne",
+    "prices": [
+      {
+        "rate": 13.5,
+        "threshold": 100
+      },
+      {
+        "rate": 10
+      }
+    ]
+  },
+  {
+    "supplier_name": "energyTwo",
+    "plan_name": "planTwo",
+    "prices": [
+      {
+        "rate": 12.5,
+        "threshold": 300
+      },
+      {
+        "rate": 11
+      }
+    ]
+  },
+  {
+    "supplier_name": "energyThree",
+    "plan_name": "planThree",
+    "prices": [
+      {
+        "rate": 14.5,
+        "threshold": 250
+      },
+      {
+        "rate": 10.1,
+        "threshold": 200
+      },
+      {
+        "rate": 9
+      }
+    ]
+  },
+  {
+    "supplier_name": "energyFour",
+    "plan_name": "planFour",
+    "prices": [
+      {
+        "rate": 9
+      }
+    ],
+    "standing_charge": 7
+  }
+]

@@ -1,0 +1,239 @@
+services:
+  kafka:
+    image: redpandadata/redpanda:v24.3.7
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1"
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --overprovisioned
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://kafka:9092
+    ports:
+      - "9092:9092"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    profiles:
+      - tools
+    depends_on:
+      - kafka
+    ports:
+      - "8099:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    profiles:
+      - tools
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: auth-service/target/auth-service-0.1.0-SNAPSHOT.jar
+    image: energypal/auth-service:0.1.0
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-service:8081
+      ENERGYPAL_OAUTH2_ISSUER: http://auth-service:8081
+
+  customer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: customer-service/target/customer-service-0.1.0-SNAPSHOT.jar
+    image: energypal/customer-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8082:8082"
+    environment: &service-env
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-service:8081
+
+  supplier-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: supplier-service/target/supplier-service-0.1.0-SNAPSHOT.jar
+    image: energypal/supplier-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8083:8083"
+    environment: *service-env
+
+  tariff-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: tariff-service/target/tariff-service-0.1.0-SNAPSHOT.jar
+    image: energypal/tariff-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8084:8084"
+    environment: *service-env
+
+  usage-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: usage-service/target/usage-service-0.1.0-SNAPSHOT.jar
+    image: energypal/usage-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8085:8085"
+    environment: *service-env
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: billing-service/target/billing-service-0.1.0-SNAPSHOT.jar
+    image: energypal/billing-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8086:8086"
+    environment: *service-env
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: payment-service/target/payment-service-0.1.0-SNAPSHOT.jar
+    image: energypal/payment-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8087:8087"
+    environment: *service-env
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: notification-service/target/notification-service-0.1.0-SNAPSHOT.jar
+    image: energypal/notification-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8088:8088"
+    environment: *service-env
+
+  search-indexer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: search-indexer-service/target/search-indexer-service-0.1.0-SNAPSHOT.jar
+    image: energypal/search-indexer-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+      - elasticsearch
+    ports:
+      - "8089:8089"
+    environment:
+      <<: *service-env
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: audit-service/target/audit-service-0.1.0-SNAPSHOT.jar
+    image: energypal/audit-service:0.1.0
+    depends_on:
+      - auth-service
+      - kafka
+    ports:
+      - "8090:8090"
+    environment: *service-env
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: api-gateway/target/api-gateway-0.1.0-SNAPSHOT.jar
+    image: energypal/api-gateway:0.1.0
+    depends_on:
+      - auth-service
+      - customer-service
+      - supplier-service
+      - tariff-service
+      - usage-service
+      - billing-service
+      - payment-service
+      - notification-service
+      - search-indexer-service
+      - audit-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-service:8081
+      ENERGYPAL_AUTH_SERVICE_URI: http://auth-service:8081
+      ENERGYPAL_CUSTOMER_SERVICE_URI: http://customer-service:8082
+      ENERGYPAL_SUPPLIER_SERVICE_URI: http://supplier-service:8083
+      ENERGYPAL_TARIFF_SERVICE_URI: http://tariff-service:8084
+      ENERGYPAL_USAGE_SERVICE_URI: http://usage-service:8085
+      ENERGYPAL_BILLING_SERVICE_URI: http://billing-service:8086
+      ENERGYPAL_PAYMENT_SERVICE_URI: http://payment-service:8087
+      ENERGYPAL_NOTIFICATION_SERVICE_URI: http://notification-service:8088
+      ENERGYPAL_SEARCH_INDEXER_SERVICE_URI: http://search-indexer-service:8089
+      ENERGYPAL_AUDIT_SERVICE_URI: http://audit-service:8090

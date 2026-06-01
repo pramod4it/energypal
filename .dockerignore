@@ -1,0 +1,11 @@
+**/target/classes
+**/target/generated-sources
+**/target/generated-test-sources
+**/target/maven-status
+**/target/surefire-reports
+**/target/site
+**/target/test-classes
+**/target/*.original
+.git
+.idea
+*.iml

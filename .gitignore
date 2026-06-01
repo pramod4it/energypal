@@ -1,0 +1,25 @@
+# Build output
+target/
+*/target/
+
+# Logs and local process state
+logs/
+.local-pids/
+*.log
+
+# IDE/user-local files
+.idea/
+*.iml
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+
+# Environment/local overrides
+.env
+.env.*
+!.env.example
+
+# Docker/local data
+data/
+tmp/

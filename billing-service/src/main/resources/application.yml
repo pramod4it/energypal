@@ -1,0 +1,18 @@
+server.port: 8086
+spring:
+  application.name: billing-service
+  security.oauth2.resourceserver.jwt.issuer-uri: http://localhost:8081
+  datasource.url: jdbc:h2:mem:billingdb
+  datasource.username: sa
+  datasource.password:
+  jpa.hibernate.ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties.spring.json.trusted.packages: com.energypal.common.event
+management.endpoints.web.exposure.include: health,info
